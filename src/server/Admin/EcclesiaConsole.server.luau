@@ -4,13 +4,8 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
--- local StarterPlayerScripts = game:GetService("StarterPlayer").StarterPlayerScripts
 
 -- Serviços necessários
--- local DataStoreModule = require(game:GetService("ServerScriptService").Data.DataStoreModule)
--- local InventoryService = require(game:GetService("ServerScriptService").Player.InventoryService)
--- local ItemData = require(game:GetService("ServerScriptService").Data.ItemData)
--- local LeaderStatsService = require(game:GetService("ServerScriptService").Player.LeaderStatsService)
 local MessagingService = game:GetService("MessagingService")
 local CommandsModule = require(script.Parent.Commands)
 
@@ -21,7 +16,6 @@ local AdminList = require(script.Parent.AdminList)
 
 local AdminPanelFolder = ReplicatedStorage.RemoteFunctions:FindFirstChild("Admin")
 -- RemoteEvents para comunicação Cliente-Servidor
---local RequestAdminPanelRemote = AdminPanelFolder:FindFirstChild("RequestAdminPanel")
 local AdminActionRemote = AdminPanelFolder:FindFirstChild("AdminAction")
 
 local function sendMessage(player, text, color)
