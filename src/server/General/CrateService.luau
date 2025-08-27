@@ -1,11 +1,11 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+local ServerScriptService = game:GetService("ServerScriptService").Server
 
 -- Módulos e Serviços
 local InventoryService = require(ServerScriptService.Player.InventoryService)
 local ItemData = require(ServerScriptService.Data.ItemData)
 local CrateData = require(ServerScriptService.Data.CrateData)
-local BuildingService = require(ServerScriptService.Game.BuildingService) 
+local BuildingService = require(ServerScriptService.Building.BuildingService) 
 
 -- Remotes
 local CrateRemotes = ReplicatedStorage:FindFirstChild("RemoteEvents"):FindFirstChild("CrateRemote")

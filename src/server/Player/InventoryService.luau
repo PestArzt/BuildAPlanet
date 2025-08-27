@@ -2,17 +2,18 @@ local InventoryService = {}
 local InventoryMetatable = {__index = InventoryService}
 
 -- Services and Dependencies
+local ServerScriptService = game:GetService("ServerScriptService")
 local UpdateDataBindableEvent = game:GetService("ServerStorage").BindableEvents.PlayerDataUpdate
 local InventoryRemotes = game.ReplicatedStorage.RemoteEvents.Inventory
 local ChangeSlotsRemote = InventoryRemotes.ChangeSlots
 local EquipItemRemote = InventoryRemotes.EquipItem
-local DataStoreModule = require(game:GetService("ServerScriptService").Data.DataStoreModule)
-local ItemData = require(game:GetService("ServerScriptService").Data.ItemData)
+local DataStoreModule = require(ServerScriptService.Server.DataStoreModule)
+local ItemData = require(ServerScriptService.Server.Data.ItemData)
 local InventoryUpdatedRemote = InventoryRemotes:WaitForChild("InventoryUpdated")
 local ToggleItemLockRemote = InventoryRemotes:WaitForChild("ToggleItemLock")
 
 -- Configuration
-InventoryService.DataStoreName = script:GetAttribute("DataStoreName")
+InventoryService.DataStoreName = "Inventory-v0"
 InventoryService.MaxSlots = 9
 InventoryService.ItemExample = {
 	Name = 'String',

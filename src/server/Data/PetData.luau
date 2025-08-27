@@ -1,4 +1,4 @@
-local DataStoreModule = require(game:GetService("ServerScriptService").Data.DataStoreModule)
+local DataStoreModule = require(game:GetService("ServerScriptService").Server.DataStoreModule)
 local HttpService = game:GetService("HttpService")
 
 local PetDataService = {}

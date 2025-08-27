@@ -1,35 +1,31 @@
-
-local ServerScriptService = game:GetService("ServerScriptService")
 local ServerStorage = game:GetService("ServerStorage")
-local GameFolder = ServerScriptService.Game
-local DataFolder = ServerScriptService.Data
 
 local ItemModels = ServerStorage.ItemModels
 local ItemPreviews = ItemModels:Clone()
 ItemPreviews.Parent = game.ReplicatedStorage
 ItemPreviews.Name = "ItemPreviews"
 
-
 local services = {
-	GameFolder.CrateShopService,
-	GameFolder.BuildingService,
-	GameFolder.FarmingService,
-	GameFolder.RocketService,
-	GameFolder.GlobalRestockService,
-	GameFolder.CrateService,
-	GameFolder.SellService,
-	GameFolder.GenericShopService,
-	GameFolder.TradeService,
-	GameFolder.PetController,
-	GameFolder.PermissionsService,
-	GameFolder.TutorialService,
-	DataFolder.PetDataService,	
+	script.General.ProximityService,
+	script.Shop.CrateShopService,
+	script.Building.BuildingService,
+	script.Building.FarmingService,
+	script.Planet.RocketService,
+	script.Shop.GlobalRestockService,
+	script.General.CrateService,
+	script.Shop.SellingService,
+	script.Shop.GenericShopService,
+	script.Trading.TradeService,
+	script.General.PetService,
+	script.Planet.PermissionsService,
+	script.General.TutorialService,
+	script.Building.PlantService,
+	script.Data.PetData,
 }
 
 local successCount = 0
 local failedStart = {}
 for _, servicePath in ipairs(services) do
-
 	local success, err = pcall(function()
 		local serviceModule = require(servicePath)
 		if serviceModule.Initialize then

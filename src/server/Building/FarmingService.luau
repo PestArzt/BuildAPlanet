@@ -1,32 +1,30 @@
+local ServerScriptService = game:GetService("ServerScriptService").Server
 local FarmingService = {}
 
 local FarmingAction = game.ReplicatedStorage.RemoteFunctions.Farming:WaitForChild("FarmingAction")
-local DataStoreModule = require(game:GetService("ServerScriptService").Data.DataStoreModule)
-local InventoryService = require(game:GetService("ServerScriptService").Player.InventoryService)
-local LeaderstatsService = require(game:GetService("ServerScriptService").Player.LeaderStatsService)
-local ItemData = require(game:GetService("ServerScriptService").Data.ItemData)
+local DataStoreModule = require(ServerScriptService.DataStoreModule)
+local InventoryService = require(ServerScriptService.Player.InventoryService)
+local LeaderstatsService = require(ServerScriptService.Player.LeaderStatsService)
+local ItemData = require(ServerScriptService.Data.ItemData)
 local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
-local StateHandler = require(game:GetService("ServerScriptService").Game.StateHandler)
+local StateHandler = require(ServerScriptService.General.StateHandler)
 local ItemModels = game:GetService("ServerStorage").ItemModels
-local EggLootData = require(game:GetService("ServerScriptService").Data.EggLootData)
+local EggLootData = require(ServerScriptService.Data.EggLootData)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HarvestFolder = ReplicatedStorage.RemoteEvents.Harvest
 local PlayAnimationEvent = HarvestFolder:WaitForChild("HarvestAnimations")
 local PlayOpeningAnimation = HarvestFolder:WaitForChild("PlayOpeningAnimation")
-local PlantMutationData = require(game:GetService("ServerScriptService").Data.PlantsMutationData)
+local PlantMutationData = require(ServerScriptService.Data.PlantsMutationData)
 
 local activePlants = {}
 
-local PlantSaveData = require(game:GetService("ServerScriptService").Data.PlantSaveData)
+local PlantSaveData = require(ServerScriptService.Building.PlantService)
 
 FarmingService.activePlants = activePlants
 
-
-local BuildingService 
-
-
+local BuildingService
 
 local function CreatePlantProgressGui(plantModel, plantData)
 	local existingGui = plantModel:FindFirstChild("PlantProgressGui")
@@ -37,7 +35,7 @@ local function CreatePlantProgressGui(plantModel, plantData)
 	local billboardGui = Instance.new("BillboardGui")
 	billboardGui.Name = "PlantProgressGui"
 	billboardGui.Parent = plantModel
-	billboardGui.Size = UDim2.new(2, 0,1, 0)
+	billboardGui.Size = UDim2.new(2, 0, 1, 0)
 	billboardGui.StudsOffset = Vector3.new(0, 2, 0)
 	billboardGui.AlwaysOnTop = true
 	billboardGui.MaxDistance = 30
@@ -51,7 +49,7 @@ local function CreatePlantProgressGui(plantModel, plantData)
 	label.TextColor3 = Color3.new(0.705882, 1, 0.741176)
 	label.TextScaled = true
 	label.Font = Enum.Font.FredokaOne
-	local uistroke  = Instance.new("UIStroke")
+	local uistroke = Instance.new("UIStroke")
 	uistroke.Parent = label
 	uistroke.Color = Color3.new(0, 0, 0)
 
@@ -69,7 +67,9 @@ local function rollForItem(lootTable)
 		totalWeight += (item.Weight or 0)
 	end
 
-	if totalWeight == 0 then return nil end
+	if totalWeight == 0 then
+		return nil
+	end
 
 	local randomNumber = math.random(1, totalWeight)
 	local currentWeight = 0
@@ -82,13 +82,17 @@ local function rollForItem(lootTable)
 	end
 end
 
--- Função para atualizar a porcentagem 
+-- Função para atualizar a porcentagem
 local function UpdatePlantProgress(plantModel, plantData)
 	local billboardGui = plantModel:FindFirstChild("PlantProgressGui")
-	if not billboardGui then return end
+	if not billboardGui then
+		return
+	end
 
 	local label = billboardGui:FindFirstChild("TextLabel")
-	if not label then return end
+	if not label then
+		return
+	end
 
 	local stages = plantData.Seed.Stages
 	if not stages or plantData.CurrentStage >= #stages then
@@ -103,7 +107,7 @@ local function UpdatePlantProgress(plantModel, plantData)
 		return
 	end
 
-	-- 1 Calcula o tempo total necessário para amadurecer 
+	-- 1 Calcula o tempo total necessário para amadurecer
 	local totalDurationToMature = 0
 	for i = 1, #stages - 1 do
 		totalDurationToMature = totalDurationToMature + (durations[i] or 0)
@@ -112,8 +116,6 @@ local function UpdatePlantProgress(plantModel, plantData)
 		billboardGui:Destroy()
 		return
 	end
-
-
 
 	-- 2 > Calcular o tempo que já passou desde o plantio
 	local elapsedTime = os.time() - plantData.PlantedTime
@@ -137,12 +139,11 @@ local function UpdatePlantProgress(plantModel, plantData)
 	end
 end
 
-
 function FarmingService:Initialize()
 	--print(`🧑‍🌾 FARMING SERVICE v{script:GetAttribute("version")} HAS STARTED`)
 
 	PlantSaveData:Initialize()
-	
+
 	-- Configurar atributos das plantas
 	for _, plant in ipairs(ItemModels.Plants:GetChildren()) do
 		if plant:IsA("Folder") then
@@ -168,7 +169,6 @@ function FarmingService:Initialize()
 		end
 	end
 end
-
 
 function FarmingService:RegisterAndContinueGrowth(plantData)
 	activePlants[plantData.UUID] = plantData
@@ -224,15 +224,14 @@ end
 
 function FarmingService:NewPlant(player, seedData, soilModel, cframe)
 	if not BuildingService then
-				BuildingService = require(game:GetService("ServerScriptService").Game.BuildingService)
-			end
+		BuildingService = require(ServerScriptService.Building.BuildingService)
+	end
 
-	
 	if not soilModel or not soilModel:FindFirstChild("Plants") then
 		warn("❌ Erro: InvalidSoilModel recebido pelo FarmingService")
 		return false, "InvalidSoilModel"
 	end
-	
+
 	if soilModel:HasTag("plot") then
 		if soilModel:GetAttribute("Owner") ~= player.Name then
 			warn(`❌ [FarmingService] Tentativa de plantio negada. ${player.Name} não é dono de ${soilModel.Name}.`)
@@ -241,13 +240,13 @@ function FarmingService:NewPlant(player, seedData, soilModel, cframe)
 		if self:CountPlantsInPlot(soilModel) >= (soilModel:GetAttribute("MaxPlants") or 20) then
 			return false, "PlotFull"
 		end
-	else 
+	else
 	end
 	-- Buscar modelo da planta (o primeiro estágio é a semente)
 	local seedModel = ItemData:FindModel(seedData, 1)
-	if not seedModel then 
+	if not seedModel then
 		warn("❌ Erro: Modelo da seed não encontrado para", seedData.Name)
-		return false, "NoSeedModel" 
+		return false, "NoSeedModel"
 	end
 
 	-- Remover item do inventário
@@ -261,8 +260,8 @@ function FarmingService:NewPlant(player, seedData, soilModel, cframe)
 	-- Posicionar a planta
 	if newPlant.PrimaryPart then
 		newPlant:PivotTo(cframe)
-	else 
-		newPlant:MoveTo(cframe.Position) 
+	else
+		newPlant:MoveTo(cframe.Position)
 	end
 
 	local playerBuffs = BuildingService:GetPlayerBuffs(player)
@@ -274,7 +273,7 @@ function FarmingService:NewPlant(player, seedData, soilModel, cframe)
 		if plotItemDataName then
 			local plotItemData = ItemData:GetItem("Farming", plotItemDataName)
 			if plotItemData and plotItemData.GrowthBonus then
-				plotGrowthBonus = plotItemData.GrowthBonus - 1 
+				plotGrowthBonus = plotItemData.GrowthBonus - 1
 			end
 		end
 	end
@@ -284,7 +283,7 @@ function FarmingService:NewPlant(player, seedData, soilModel, cframe)
 	local stageDurations = {}
 	for i, stageData in ipairs(seedData.Stages) do
 		local duration = stageData.Duration
-		local baseDuration = 0 
+		local baseDuration = 0
 		if type(duration) == "table" then
 			baseDuration = math.random(duration[1], duration[2])
 		else
@@ -303,8 +302,8 @@ function FarmingService:NewPlant(player, seedData, soilModel, cframe)
 		SoilModel = soilModel,
 		Position = cframe,
 		StageDurations = stageDurations,
-		IsMutated = false, 
-		MutatedName = nil,  
+		IsMutated = false,
+		MutatedName = nil,
 	}
 
 	-- Definir atributos
@@ -320,14 +319,14 @@ function FarmingService:NewPlant(player, seedData, soilModel, cframe)
 
 	self:RegisterAndContinueGrowth(plantData)
 
--- faz parte do tutorial?
+	-- faz parte do tutorial?
 
 	ReplicatedStorage.BindableEvents.Tutorial.TutorialProgressEvent:Fire(player, "PlantPlaced", seedData.Name)
 	return true, plantData
 end
 
 function FarmingService:GrowCycle(plantData, initialTimeIntoStage)
-	initialTimeIntoStage = initialTimeIntoStage or 0 
+	initialTimeIntoStage = initialTimeIntoStage or 0
 
 	task.spawn(function()
 		local durations = plantData.StageDurations
@@ -347,7 +346,7 @@ function FarmingService:GrowCycle(plantData, initialTimeIntoStage)
 			end
 
 			task.wait(waitTime)
-			initialTimeIntoStage = 0 
+			initialTimeIntoStage = 0
 
 			if activePlants[plantData.UUID] then
 				FarmingService:GrowPlant(plantData, stage + 1)
@@ -371,13 +370,13 @@ function FarmingService:GrowPlant(plantData, stage)
 	end
 
 	local newStageModel = ItemData:FindModel(plantData.Seed, stage)
-	if not newStageModel then 
+	if not newStageModel then
 		warn("❌ Modelo não encontrado para estágio", stage)
-		return 
+		return
 	end
 
 	if stage == #plantData.Seed.Stages then
-		local didMutate = false 
+		local didMutate = false
 		-- Apenas  mutações  se categoria "Seeds"
 		if plantData.Seed.Category == "Seeds" then
 			local originalPlantName = plantData.Seed.Plant
@@ -386,19 +385,23 @@ function FarmingService:GrowPlant(plantData, stage)
 			if originalPlantData and originalPlantData.PossibleMutations then
 				for _, mutationInfo in ipairs(originalPlantData.PossibleMutations) do
 					if math.random() <= mutationInfo.Chance then
-						local mutationData = PlantMutationData:GetMutation(mutationInfo.Name) 
+						local mutationData = PlantMutationData:GetMutation(mutationInfo.Name)
 						if mutationData then
 							local player = Players:FindFirstChild(plantData.Owner)
 							local NotifyPlayerEvent = ReplicatedStorage.RemoteEvents.Shop:FindFirstChild("NotifyPlayer")
 							if player and NotifyPlayerEvent then
-								local message = string.format("✨ Mutação! Sua %s virou uma %s!", originalPlantName, mutationData.Name)
+								local message = string.format(
+									"✨ Mutação! Sua %s virou uma %s!",
+									originalPlantName,
+									mutationData.Name
+								)
 								NotifyPlayerEvent:FireClient(player, message, nil, Color3.fromRGB(255, 215, 0))
 							end
-							newStageModel = PlantMutationData:FindMutationModel(mutationInfo.Name) 
+							newStageModel = PlantMutationData:FindMutationModel(mutationInfo.Name)
 							plantData.IsMutated = true
 							plantData.MutatedName = mutationData.Name
 							didMutate = true
-							break 
+							break
 						end
 					end
 				end
@@ -411,9 +414,9 @@ function FarmingService:GrowPlant(plantData, stage)
 		newStageModel = ItemData:FindModel(plantData.Seed, stage)
 	end
 
-	if not newStageModel then 
+	if not newStageModel then
 		warn("❌ Modelo não encontrado para estágio", stage)
-		return 
+		return
 	end
 	-- Destruir modelo antigo
 	if plantData.Model then
@@ -429,15 +432,15 @@ function FarmingService:GrowPlant(plantData, stage)
 	tempModel:SetAttribute("Owner", plantData.Owner)
 	tempModel:SetAttribute("PlantedTime", plantData.PlantedTime)
 	tempModel:SetAttribute("CurrentStage", stage)
-	tempModel:SetAttribute("IsMutated", plantData.IsMutated) 
-	tempModel:SetAttribute("MutatedName", plantData.MutatedName or "") 
+	tempModel:SetAttribute("IsMutated", plantData.IsMutated)
+	tempModel:SetAttribute("MutatedName", plantData.MutatedName or "")
 	tempModel:SetAttribute("Category", plantData.Seed.Category)
 	tempModel:SetAttribute("StageDurations", HttpService:JSONEncode(plantData.StageDurations))
 	-- Posicionar modelo
 	local currentPlantPosition = plantData.Model and plantData.Model:GetPivot() or plantData.Position
 	if tempModel.PrimaryPart then
 		tempModel:PivotTo(currentPlantPosition)
-	else 
+	else
 		tempModel:MoveTo(currentPlantPosition.Position)
 	end
 
@@ -459,15 +462,15 @@ function FarmingService:GrowPlant(plantData, stage)
 		if plantData.IsMutated then
 			cropInteraction.ActionText = "Golden"
 			cropInteraction.ObjectText = plantData.MutatedName
-			cropInteraction:SetAttribute("Theme", "StarProx") 
+			cropInteraction:SetAttribute("Theme", "StarProx")
 		else
 			cropInteraction.ActionText = "Harvest"
 			cropInteraction.ObjectText = plantData.Seed.Name
 			if plantData.Seed.Category == "Eggs" then
-				cropInteraction.ActionText = "Chocar" 
-				cropInteraction:SetAttribute("Theme", "EggHatchProx") 
+				cropInteraction.ActionText = "Chocar"
+				cropInteraction:SetAttribute("Theme", "EggHatchProx")
 			else
-				cropInteraction:SetAttribute("Theme", "SeedCollectprox") 
+				cropInteraction:SetAttribute("Theme", "SeedCollectprox")
 			end
 		end
 
@@ -475,13 +478,13 @@ function FarmingService:GrowPlant(plantData, stage)
 			FarmingService:HarvestPlant(triggeringPlayer, plantData)
 		end)
 		task.spawn(function()
-			task.wait(0.1) 
+			task.wait(0.1)
 			cropInteraction.Enabled = false
 			task.wait(0.05)
 			cropInteraction.Enabled = true
 		end)
 	end
-	
+
 	if plantData.Model and plantData.Model:FindFirstChild("PlantProgressGui") then
 		plantData.Model:FindFirstChild("PlantProgressGui"):Destroy()
 	end
@@ -515,7 +518,7 @@ end
 
 function FarmingService:HarvestPlant(player, plantData)
 	if not BuildingService then
-		BuildingService = require(game:GetService("ServerScriptService").Game.BuildingService)
+		BuildingService = require(ServerScriptService.Building.BuildingService)
 	end
 	if StateHandler.GetState(player, "IsHarvesting") then
 		return
@@ -529,16 +532,16 @@ function FarmingService:HarvestPlant(player, plantData)
 
 	-- Lógica de recompensa para MUTAÇÃO
 	if plantData.IsMutated and plantData.MutatedName then
-		local mutationData = PlantMutationData:GetMutation(plantData.MutatedName) 
+		local mutationData = PlantMutationData:GetMutation(plantData.MutatedName)
 		if mutationData then
-			PlayAnimationEvent:FireClient(player, "Harvest") 
+			PlayAnimationEvent:FireClient(player, "Harvest")
 			LeaderstatsService:IncrementPlayerStat(player, "FarmingXP", (plantData.Seed.Experience or 0) * 5)
 			InventoryService:Add(player, {
 				Name = mutationData.Name,
-				Category = "PlantsMutation", 
+				Category = "PlantsMutation",
 				Stackable = mutationData.Stackable,
 				Quantity = 1,
-				Locked = false
+				Locked = false,
 			})
 		end
 	else
@@ -549,34 +552,37 @@ function FarmingService:HarvestPlant(player, plantData)
 			local eggPivot = plantData.Model and plantData.Model:GetPivot() or plantData.Position
 			local lootTableName = itemInfo.LootTable
 			if not lootTableName then
-				warn("❌ Ovo '"..tostring(itemInfo.Name).."' não tem uma LootTable definida."); return
+				warn("❌ Ovo '" .. tostring(itemInfo.Name) .. "' não tem uma LootTable definida.")
+				return
 			end
 			local eggLootConfig = EggLootData[lootTableName]
 			if not eggLootConfig or not eggLootConfig.LootTable then
-				warn("❌ Tabela de loot '"..tostring(lootTableName).."' não encontrada."); return
+				warn("❌ Tabela de loot '" .. tostring(lootTableName) .. "' não encontrada.")
+				return
 			end
 			local wonPetInfo = rollForItem(eggLootConfig.LootTable)
 			if not wonPetInfo then
-				warn("❌ Falha ao sortear pet do ovo:", itemInfo.Name); return
+				warn("❌ Falha ao sortear pet do ovo:", itemInfo.Name)
+				return
 			end
 			local petItemData = ItemData:GetItem(wonPetInfo.Category, wonPetInfo.Name)
 			if not petItemData then
-				warn("❌ Dados do pet ganho não encontrados:", wonPetInfo.Name); return
+				warn("❌ Dados do pet ganho não encontrados:", wonPetInfo.Name)
+				return
 			end
 			local newPetInstanceData = {
 				Name = petItemData.Name,
 				Category = "Pets",
-				Stackable = false,  
+				Stackable = false,
 				Quantity = 1,
 				Locked = false,
 				UUID = HttpService:GenerateGUID(false),
-				Level = 1,      
-				XP = 0         
+				Level = 1,
+				XP = 0,
 			}
 			InventoryService:Add(player, newPetInstanceData)
 			print(string.format("🥚 %s chocou um %s e ganhou um %s!", player.Name, itemInfo.Name, petItemData.Name))
 			LeaderstatsService:IncrementPlayerStat(player, "FarmingXP", itemInfo.Experience or 0)
-
 
 			PlayOpeningAnimation:FireClient(player, itemInfo.Name, itemInfo.Category, eggPivot, wonPetInfo)
 
@@ -604,10 +610,14 @@ function FarmingService:HarvestPlant(player, plantData)
 						Category = plantItemData.Category,
 						Stackable = plantItemData.Stackable,
 						Quantity = 1,
-						Locked = false
+						Locked = false,
 					})
 				else
-					warn("❌ Dados da planta '"..tostring(plantName).."' para colheita não encontrados no ItemData.")
+					warn(
+						"❌ Dados da planta '"
+							.. tostring(plantName)
+							.. "' para colheita não encontrados no ItemData."
+					)
 				end
 			end
 		end
@@ -677,7 +687,9 @@ end
 
 function FarmingService:ValidatePlacement(player, position)
 	local currentPlanet, hit = FindPlanetAroundPosition(position.Position, 5, 64)
-	if not currentPlanet then return false, "NoPlanetFound" end
+	if not currentPlanet then
+		return false, "NoPlanetFound"
+	end
 
 	local planetCenter = currentPlanet:IsA("BasePart") and currentPlanet.Position or currentPlanet:GetPivot().Position
 
@@ -685,10 +697,12 @@ function FarmingService:ValidatePlacement(player, position)
 	rayParams.FilterType = Enum.RaycastFilterType.Exclude
 	rayParams.IgnoreWater = true
 
-	local ignoredObjects = {player.Character}
+	local ignoredObjects = { player.Character }
 
 	local previewFolder = workspace:FindFirstChild("PreviewModels")
-	if previewFolder then table.insert(ignoredObjects, previewFolder) end
+	if previewFolder then
+		table.insert(ignoredObjects, previewFolder)
+	end
 
 	for _, obj in pairs(CollectionService:GetTagged("preview")) do
 		table.insert(ignoredObjects, obj)
@@ -703,20 +717,20 @@ function FarmingService:ValidatePlacement(player, position)
 	rayParams.FilterDescendantsInstances = ignoredObjects
 
 	local directionOut = (position.Position - planetCenter).Unit
-	local raycast = workspace:Raycast(
-		position.Position + directionOut * 0.5, 
-		-directionOut * 1000, 
-		rayParams
-	)
+	local raycast = workspace:Raycast(position.Position + directionOut * 0.5, -directionOut * 1000, rayParams)
 
-	if not raycast then return false, "NoGroundHit" end
+	if not raycast then
+		return false, "NoGroundHit"
+	end
 
 	local finalRaycast = workspace:Raycast(
 		getNormalCFrame(raycast).Position + raycast.Normal.Unit * 0.5,
 		-raycast.Normal.Unit * 1000,
 		rayParams
 	)
-	if not finalRaycast then return false, "NoGroundHit" end
+	if not finalRaycast then
+		return false, "NoGroundHit"
+	end
 	local model = finalRaycast.Instance:FindFirstAncestorOfClass("Model")
 	if not model or not model:HasTag("plot") or not model:FindFirstChild("Plants") then
 		return false, "InvalidPlot"
@@ -729,8 +743,7 @@ function FarmingService:ValidatePlacement(player, position)
 	end
 	local plantingPosition = getNormalCFrame(finalRaycast).Position
 	for _, plantData in pairs(activePlants) do
-		if plantData.SoilModel == model and 
-			(plantingPosition - plantData.Position.Position).Magnitude < 1.8 then
+		if plantData.SoilModel == model and (plantingPosition - plantData.Position.Position).Magnitude < 1.8 then
 			return false, "TooClose"
 		end
 	end
@@ -738,7 +751,9 @@ function FarmingService:ValidatePlacement(player, position)
 end
 
 function FarmingService:ClearAllPlayerPlants(player)
-	if not player then return end
+	if not player then
+		return
+	end
 
 	local plantsToRemove = {}
 	for plantUUID, plantData in pairs(activePlants) do
@@ -754,6 +769,5 @@ function FarmingService:ClearAllPlayerPlants(player)
 		end
 	end
 end
-
 
 return FarmingService

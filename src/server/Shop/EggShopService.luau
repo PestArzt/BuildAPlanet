@@ -9,15 +9,15 @@ local ServerStorage = game:GetService("ServerStorage")
 local Workspace = game:GetService("Workspace")
 local CollectionService = game:GetService("CollectionService")
 local DataStoreService = game:GetService("DataStoreService")
-local ScriptService = game:GetService("ServerScriptService")
+local ServerScriptService = game:GetService("ServerScriptService").Server
 
-local ItemData = require(game:GetService("ServerScriptService").Data.ItemData)
-local LeaderstatsService = require(game:GetService("ServerScriptService").Player.LeaderStatsService)
-local InventoryService = require(game:GetService("ServerScriptService").Player.InventoryService)
-local StateHandler = require(game:GetService("ServerScriptService").Game.StateHandler)
+local ItemData = require(ServerScriptService.Data.ItemData)
+local LeaderstatsService = require(ServerScriptService.Player.LeaderStatsService)
+local InventoryService = require(ServerScriptService.Player.InventoryService)
+local StateHandler = require(ServerScriptService.General.StateHandler)
 local RarityManager = require(game:GetService("ReplicatedStorage").Modules.RarityManager)
 local ShopEffectManager = require(game:GetService("ReplicatedStorage").Modules.ShopEffectManager)
-local EggLootData = require(ScriptService.Data.EggLootData)
+local EggLootData = require(ServerScriptService.Data.EggLootData)
 
 local PlaySoundEvent = ReplicatedStorage.RemoteEvents.SoundsEffects:WaitForChild("PlaySoundForClient")
 

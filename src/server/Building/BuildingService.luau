@@ -10,6 +10,7 @@ local BuildingService = {}
 -- Services
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService").Server
 local ServerStorage = game:GetService("ServerStorage")
 local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
@@ -17,17 +18,17 @@ local RunService = game:GetService("RunService")
 
 -- Dependencies
 local BuildingAction = ReplicatedStorage.RemoteFunctions.Building:WaitForChild("PlaceObject")
-local InventoryService = require(game.ServerScriptService.Player.InventoryService)
-local ItemData = require(game.ServerScriptService.Data.ItemData)
-local FarmingService = require(game:GetService("ServerScriptService").Game.FarmingService) 
-local PlantSaveData = require(game:GetService("ServerScriptService").Data.PlantSaveData)
-local DataStoreModule = require(game:GetService("ServerScriptService").Data.DataStoreModule)
-local StateHandler = require(game:GetService("ServerScriptService").Game.StateHandler)
+local InventoryService = require(ServerScriptService.Player.InventoryService)
+local ItemData = require(ServerScriptService.Data.ItemData)
+local FarmingService = require(ServerScriptService.Building.FarmingService)
+local PlantSaveData = require(ServerScriptService.Building.PlantService)
+local DataStoreModule = require(ServerScriptService.DataStoreModule)
+local StateHandler = require(ServerScriptService.General.StateHandler)
 local ItemModels = ServerStorage:WaitForChild("ItemModels")
 local objectClickedEvent = ReplicatedStorage.BindableEvents.BuildMode.ObjectClickedEvent
 local objectClickedEvent = ReplicatedStorage.RemoteFunctions.Building:WaitForChild("ObjectClickedEvent")
 local SetCurrentPlanetEvent = ReplicatedStorage.RemoteFunctions.Building:WaitForChild("SetCurrentPlanet")
-local CrateData = require(game:GetService("ServerScriptService").Data.CrateData)
+local CrateData = require(ServerScriptService.Data.CrateData)
 local UpdateClientBuffsEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("UpdateClientBuffs")
 local RarityManager = require(game.ReplicatedStorage.Modules.RarityManager)
 
@@ -35,11 +36,11 @@ local RarityManager = require(game.ReplicatedStorage.Modules.RarityManager)
 local DATA_VERSION = "1.3"
 local PLANET_BUILDINGS_DATASTORE_NAME = "PlanetBuildings_v" .. DATA_VERSION
 local PLANET_LAYOUT_DATASTORE_NAME = "PlanetLayout_v" .. DATA_VERSION
-local PLANET_PETS_DATASTORE_NAME = "PlanetPets_vbeta" .. DATA_VERSION 
+local PLANET_PETS_DATASTORE_NAME = "PlanetPets_vbeta" .. DATA_VERSION
 
 local BUILDING_CONFIG = {
 	MIN_DISTANCE_BETWEEN_ITEMS = 0,
-	RAYCAST_DISTANCE = 1000
+	RAYCAST_DISTANCE = 1000,
 }
 
 -- Storage
@@ -51,11 +52,10 @@ local playerCurrentPlanet = {}
 type ObjectInfo = {
 	Name: string,
 	Category: string,
-	Cf: {number},
+	Cf: { number },
 	PlacedTime: number?,
-	UUID: string?  
+	UUID: string?,
 }
-
 
 --local PREDEFINED_PLANET_LAYOUT = {
 --	{
@@ -79,7 +79,6 @@ local function countPlayerPlacedItems(player, itemName)
 	return count
 end
 
-
 local function createCrateInfoGui(crateModel, crateType)
 	local crateInfoTemplate = ReplicatedStorage.BillboardGuis:FindFirstChild("CrateInfo")
 	if not crateInfoTemplate then
@@ -101,9 +100,11 @@ local function createCrateInfoGui(crateModel, crateType)
 		totalWeight = totalWeight + (item.Weight or 0)
 	end
 
-	if totalWeight == 0 then return end 
+	if totalWeight == 0 then
+		return
+	end
 
-	local sortedLoot = table.clone(crateConfig.LootTable) 
+	local sortedLoot = table.clone(crateConfig.LootTable)
 	table.sort(sortedLoot, function(a, b)
 		return a.Weight > b.Weight
 	end)
@@ -125,7 +126,7 @@ local function createCrateInfoGui(crateModel, crateType)
 		end
 	end
 	local crateSize = crateModel:GetExtentsSize()
-	crateGui.StudsOffset = Vector3.new(0, crateSize.Y / 2 + 5.5, 0) 
+	crateGui.StudsOffset = Vector3.new(0, crateSize.Y / 2 + 5.5, 0)
 	crateGui.Adornee = crateModel.PrimaryPart or crateModel
 	crateGui.Parent = crateModel
 end
@@ -155,7 +156,9 @@ local function getPlayerPlanetModel(player)
 end
 
 local function addClickDetector(model, ownerPlayer)
-	if not model or not ownerPlayer then return end
+	if not model or not ownerPlayer then
+		return
+	end
 	for _, part in ipairs(model:GetDescendants()) do
 		if part:IsA("BasePart") then
 			for _, child in ipairs(part:GetChildren()) do
@@ -166,7 +169,7 @@ local function addClickDetector(model, ownerPlayer)
 
 			local clickDetector = Instance.new("ClickDetector")
 			clickDetector.MaxActivationDistance = 128
-			clickDetector.Parent = part 
+			clickDetector.Parent = part
 
 			clickDetector.MouseClick:Connect(function(clickedPlayer)
 				if clickedPlayer == ownerPlayer then
@@ -177,14 +180,13 @@ local function addClickDetector(model, ownerPlayer)
 	end
 end
 
-
 local function setSafeAttributes(object, objectData)
 	local safeAttributes = {
 		UUID = objectData.UUID,
 		ItemName = objectData.ItemName,
 		Owner = objectData.Owner,
 		PlacedTime = objectData.PlacedTime,
-		Category = objectData.Category
+		Category = objectData.Category,
 	}
 
 	for attributeName, value in pairs(safeAttributes) do
@@ -212,17 +214,21 @@ function BuildingService:CheckCanRemove(player, objectUUID)
 		end
 	end
 
-	if not objectData then return false, "ObjectNotFound" end
-	if objectData.Owner ~= player.Name then return false, "NotOwner" end
+	if not objectData then
+		return false, "ObjectNotFound"
+	end
+	if objectData.Owner ~= player.Name then
+		return false, "NotOwner"
+	end
 
 	if objectData.Category == "Farming" then
 		local model = objectData.Model
 		if model and model:FindFirstChild("Plants") and #model.Plants:GetChildren() > 0 then
-			return false, "HasPlants" 
+			return false, "HasPlants"
 		end
 	end
 
-	return true, "CanRemove" 
+	return true, "CanRemove"
 end
 local function serializePlanet(planetName)
 	local data = {}
@@ -253,7 +259,7 @@ local function serializePlanet(planetName)
 				Category = objectData.Category,
 				Cf = table.pack(relativeCF:GetComponents()),
 				PlacedTime = objectData.PlacedTime,
-				UUID = objectData.UUID  
+				UUID = objectData.UUID,
 			}
 			table.insert(data, info)
 		end
@@ -271,54 +277,57 @@ local function getNormalCFrame(RayCast)
 	return CFrame.fromMatrix(RayCast.Position, right, up) * rotationCFrame
 end
 
-
 --[[
 	Cria a BillboardGui para exibir os buffs de uma decoração.
  --]]
- local function createBuffDisplayGui(model, itemData)
-		 	if not itemData.Buffs then return end
-	 
-	 	-- Remove GUI existente para evitar duplicação
-	 	for _, child in ipairs(model:GetChildren()) do
-			if child:IsA("BillboardGui") and child.Name == "BuffDisplayGui" then
-	 			child:Destroy()
-	 		end
-	 	end
-	 
-	 	local billboardGui = Instance.new("BillboardGui")
-	 	billboardGui.Name = "BuffDisplayGui"	 	billboardGui.Size = UDim2.new(4, 0, 1.5, 0)
-		billboardGui.StudsOffset = Vector3.new(0, model:GetExtentsSize().Y / 2 + 2, 0)
-	 	billboardGui.AlwaysOnTop = true
-	 	billboardGui.MaxDistance = 40
-	 	billboardGui.Parent = model
-	 
- 	local textLabel = Instance.new("TextLabel")
-	 	textLabel.Size = UDim2.new(1, 0, 1, 0)
-	 	textLabel.BackgroundTransparency = 1
-	 	textLabel.Font = Enum.Font.FredokaOne
-	 	textLabel.TextScaled = true
-	 	textLabel.TextColor3 = Color3.fromRGB(255, 230, 128)
-	 	textLabel.Parent = billboardGui
-	 
-	 	local uiStroke = Instance.new("UIStroke")
-	 	uiStroke.Color = Color3.fromRGB(60, 40, 0)
-	 	uiStroke.Thickness = 1.5
-	 	uiStroke.Parent = textLabel
-	 
-	 	local buffText = {}
-	 	if itemData.Buffs.MoneyBonus > 0 then
-	 		table.insert(buffText, string.format("💰 +%.0f%% Money", itemData.Buffs.MoneyBonus * 100))
-	 	end
-	 	if itemData.Buffs.GrowthSpeedBonus > 0 then
-	 		table.insert(buffText, string.format("🌿 +%.0f%% Growth", itemData.Buffs.GrowthSpeedBonus * 100))
-	 	end
-	 
-	 	textLabel.Text = table.concat(buffText, "\n")
-	 end
-	 
-	 
+local function createBuffDisplayGui(model, itemData)
+	if not itemData.Buffs then
+		return
+	end
+
+	-- Remove GUI existente para evitar duplicação
+	for _, child in ipairs(model:GetChildren()) do
+		if child:IsA("BillboardGui") and child.Name == "BuffDisplayGui" then
+			child:Destroy()
+		end
+	end
+
+	local billboardGui = Instance.new("BillboardGui")
+	billboardGui.Name = "BuffDisplayGui"
+	billboardGui.Size = UDim2.new(4, 0, 1.5, 0)
+	billboardGui.StudsOffset = Vector3.new(0, model:GetExtentsSize().Y / 2 + 2, 0)
+	billboardGui.AlwaysOnTop = true
+	billboardGui.MaxDistance = 40
+	billboardGui.Parent = model
+
+	local textLabel = Instance.new("TextLabel")
+	textLabel.Size = UDim2.new(1, 0, 1, 0)
+	textLabel.BackgroundTransparency = 1
+	textLabel.Font = Enum.Font.FredokaOne
+	textLabel.TextScaled = true
+	textLabel.TextColor3 = Color3.fromRGB(255, 230, 128)
+	textLabel.Parent = billboardGui
+
+	local uiStroke = Instance.new("UIStroke")
+	uiStroke.Color = Color3.fromRGB(60, 40, 0)
+	uiStroke.Thickness = 1.5
+	uiStroke.Parent = textLabel
+
+	local buffText = {}
+	if itemData.Buffs.MoneyBonus > 0 then
+		table.insert(buffText, string.format("💰 +%.0f%% Money", itemData.Buffs.MoneyBonus * 100))
+	end
+	if itemData.Buffs.GrowthSpeedBonus > 0 then
+		table.insert(buffText, string.format("🌿 +%.0f%% Growth", itemData.Buffs.GrowthSpeedBonus * 100))
+	end
+
+	textLabel.Text = table.concat(buffText, "\n")
+end
+
 local function createPlotBuffGui(model, itemData)
-	if not itemData.GrowthBonus or itemData.GrowthBonus <= 1 then return end
+	if not itemData.GrowthBonus or itemData.GrowthBonus <= 1 then
+		return
+	end
 	for _, child in ipairs(model:GetChildren()) do
 		if child:IsA("BillboardGui") and child.Name == "PlotBuffGui" then
 			child:Destroy()
@@ -352,7 +361,7 @@ local function createPlotBuffGui(model, itemData)
 	textLabel.Text = string.format("🌱 +%.0f%% Crescimento", bonusPercentage)
 end
 
-	 --[[
+--[[
 + 	Recalcula os buffs totais para o planeta de um jogador e armazena no cache.
 + --]]
 function BuildingService:UpdateAndNotifyClientBuffs(player)
@@ -361,9 +370,9 @@ function BuildingService:UpdateAndNotifyClientBuffs(player)
 		UpdateClientBuffsEvent:FireClient(player, currentBuffs)
 	end
 end
-	 
+
 function BuildingService:GetPlayerBuffs(player)
-	local PetController = require(game.ServerScriptService.Game.PetController)
+	local PetController = require(ServerScriptService.General.PetService)
 	local totalBuffs = { MoneyBonus = 0, GrowthSpeedBonus = 0 }
 	local ownedPlanetName = nil
 	for _, pFolder in ipairs(workspace.Planets:GetChildren()) do
@@ -459,7 +468,7 @@ function BuildingService:UpdateObjectPosition(player, objectUUID, newCFrame)
 end
 
 function BuildingService:LoadPlanet(player, planetName)
-	local PetController = require(game.ServerScriptService.Game.PetController)
+	local PetController = require(ServerScriptService.General.PetService)
 	if not Players:GetPlayerByUserId(player.UserId) then
 		return
 	end
@@ -527,10 +536,14 @@ function BuildingService:LoadPlanet(player, planetName)
 			newObject.Parent = workspace.PlacedObjects
 			local newUUID = objectInfo.UUID or HttpService:GenerateGUID(true)
 			local objectData = {
-				UUID = newUUID, ItemName = objectInfo.Name, ItemData = itemData,
-				Model = newObject, Owner = player.Name,
+				UUID = newUUID,
+				ItemName = objectInfo.Name,
+				ItemData = itemData,
+				Model = newObject,
+				Owner = player.Name,
 				PlacedTime = objectInfo.PlacedTime or os.time(),
-				Position = worldCF.Position, Rotation = worldCF.Rotation,
+				Position = worldCF.Position,
+				Rotation = worldCF.Rotation,
 				Category = objectInfo.Category,
 			}
 			setSafeAttributes(newObject, objectData)
@@ -540,14 +553,20 @@ function BuildingService:LoadPlanet(player, planetName)
 			end
 			CollectionService:AddTag(newObject, "built_item")
 			if objectInfo.Category == "Farming" then
-				if itemData.MaxPlants then newObject:SetAttribute("MaxPlants", itemData.MaxPlants) end
-				if itemData.GrowthBonus then newObject:SetAttribute("GrowthBonus", itemData.GrowthBonus) end 
-				if not newObject:FindFirstChild("Plants") then Instance.new("Folder", newObject).Name = "Plants" end
+				if itemData.MaxPlants then
+					newObject:SetAttribute("MaxPlants", itemData.MaxPlants)
+				end
+				if itemData.GrowthBonus then
+					newObject:SetAttribute("GrowthBonus", itemData.GrowthBonus)
+				end
+				if not newObject:FindFirstChild("Plants") then
+					Instance.new("Folder", newObject).Name = "Plants"
+				end
 
-				createPlotBuffGui(newObject, itemData) 
+				createPlotBuffGui(newObject, itemData)
 			end
 			if objectInfo.Category == "Crates" then
-				local crateConfig = CrateData[objectInfo.Name] 
+				local crateConfig = CrateData[objectInfo.Name]
 				if crateConfig then
 					local prompt = Instance.new("ProximityPrompt")
 					prompt.ActionText = "Open"
@@ -558,7 +577,7 @@ function BuildingService:LoadPlanet(player, planetName)
 					prompt:SetAttribute("Theme", "StarProx")
 					prompt:SetAttribute("IsCrate", true)
 					prompt.Parent = newObject.PrimaryPart or newObject
-					newObject:SetAttribute("CrateType", objectInfo.Name) 
+					newObject:SetAttribute("CrateType", objectInfo.Name)
 					task.spawn(function()
 						prompt.Enabled = false
 						task.wait(0.1)
@@ -567,7 +586,9 @@ function BuildingService:LoadPlanet(player, planetName)
 					createCrateInfoGui(newObject, objectInfo.Name)
 				end
 			end
-			if itemData.Buffs then createBuffDisplayGui(newObject, itemData) end
+			if itemData.Buffs then
+				createBuffDisplayGui(newObject, itemData)
+			end
 			placedObjects[planetName][newUUID] = objectData
 			addClickDetector(newObject, player)
 		end
@@ -576,14 +597,14 @@ function BuildingService:LoadPlanet(player, planetName)
 	end
 
 	print("♻️ Todos os objetos de construção carregados. Iniciando restauração de plantas...")
-	PlantSaveData:LoadPlayerPlants(player) 
+	PlantSaveData:LoadPlayerPlants(player)
 	PlantSaveData:RestoreAllPlantsForPlayer(player)
 
 	local petDataStore = DataStoreModule.GetDataStore(player, PLANET_PETS_DATASTORE_NAME)
 	local savedPets = petDataStore:GetData({})
 	if savedPets and next(savedPets) then
 		print(`[BuildingService] Carregando ${#savedPets} pets para ${player.Name}`)
-		PetController:LoadAndSpawnPets(player, savedPets, planetModel) 
+		PetController:LoadAndSpawnPets(player, savedPets, planetModel)
 	else
 		print(`[BuildingService] Nenhum pet salvo encontrado para ${player.Name}.`)
 	end
@@ -594,41 +615,44 @@ function BuildingService:LoadPlanet(player, planetName)
 end
 
 function BuildingService:SaveAllPlayerData(player)
-	if not player then return end
+	if not player then
+		return
+	end
 	print(`[BuildingService] Preparando dados de construção e layout para ${player.Name}...`)
 
-	local planetFolderToSave = nil      
+	local planetFolderToSave = nil
 	local planetModelToSave = nil
 
 	for _, planetFolder in ipairs(workspace.Planets:GetChildren()) do
 		if planetFolder:GetAttribute("Owner") == player.Name then
-			planetFolderToSave = planetFolder 
+			planetFolderToSave = planetFolder
 			planetModelToSave = getPlanetModel(planetFolder)
 			break
 		end
 	end
 
-	print(`[BuildingService Debug] Planeta encontrado para salvar: ${tostring(planetFolderToSave and planetFolderToSave.Name)}`)
+	print(
+		`[BuildingService Debug] Planeta encontrado para salvar: ${tostring(
+			planetFolderToSave and planetFolderToSave.Name
+		)}`
+	)
 
 	if planetModelToSave then
-
 		local layoutDataStore = DataStoreModule.GetDataStore(player, PLANET_LAYOUT_DATASTORE_NAME)
 		local layoutData = {}
 
-			local platformModel = planetFolderToSave:FindFirstChild("Platform")
+		local platformModel = planetFolderToSave:FindFirstChild("Platform")
 		if platformModel then
-			
 			local relativeCF = planetModelToSave:GetPivot():ToObjectSpace(platformModel:GetPivot())
 
 			-- Prepara os dados para salvar
 			layoutData.Platform = {
-				Cf = table.pack(relativeCF:GetComponents())
+				Cf = table.pack(relativeCF:GetComponents()),
 			}
 			print(`[BuildingService] Dados de layout (plataforma) preparados para ${player.Name}.`)
 		end
 
 		layoutDataStore:SetData(layoutData)
-	
 
 		local buildingData = {}
 		for _, objectModel in ipairs(workspace.PlacedObjects:GetChildren()) do
@@ -641,7 +665,7 @@ function BuildingService:SaveAllPlayerData(player)
 					Category = objectModel:GetAttribute("Category"),
 					Cf = table.pack(relativeCF:GetComponents()),
 					PlacedTime = objectModel:GetAttribute("PlacedTime"),
-					UUID = objectModel:GetAttribute("UUID")
+					UUID = objectModel:GetAttribute("UUID"),
 				}
 				table.insert(buildingData, info)
 			end
@@ -656,19 +680,19 @@ function BuildingService:SaveAllPlayerData(player)
 		local serializedPets = {}
 		local activePetsFolder = workspace:FindFirstChild("ActivePetsFolder")
 		if activePetsFolder then
-			print(`[DEBUG] Verificando pets para salvar para o jogador ${player.Name} (ID: ${player.UserId})`) 
+			print(`[DEBUG] Verificando pets para salvar para o jogador ${player.Name} (ID: ${player.UserId})`)
 			for _, petModel in ipairs(activePetsFolder:GetChildren()) do
 				local petOwnerId = petModel:GetAttribute("Owner")
 				if petOwnerId == player.UserId then
-					print("   >> CORRESPONDEU! Serializando pet...") 
+					print("   >> CORRESPONDEU! Serializando pet...")
 					local petWorldCF = petModel:GetPivot()
 					local relativeCF = planetModelToSave:GetPivot():ToObjectSpace(petWorldCF)
 
 					local simplePetData = {
 						UUID = petModel:GetAttribute("PetUUID"),
 						ItemName = petModel:GetAttribute("ItemName") or petModel.Name,
-						State = petModel:GetAttribute("State") or "Follow", 
-						Cf = table.pack(relativeCF:GetComponents())
+						State = petModel:GetAttribute("State") or "Follow",
+						Cf = table.pack(relativeCF:GetComponents()),
 					}
 					table.insert(serializedPets, simplePetData)
 				end
@@ -681,7 +705,6 @@ function BuildingService:SaveAllPlayerData(player)
 		if #serializedPets > 0 then
 			print(`[BuildingService] ${#serializedPets} pets serializados e preparados no cache para ${player.Name}.`)
 		end
-
 	else
 		print("[BuildingService Debug] Nenhum planeta encontrado para o jogador. Nada a salvar.")
 	end
@@ -690,12 +713,12 @@ function BuildingService:SaveAllPlayerData(player)
 end
 
 function BuildingService:PlaceItem(player, itemData, isServer)
-	local PetController = require(game.ServerScriptService.Game.PetController)
+	local PetController = require(ServerScriptService.General.PetService)
 	if StateHandler.GetState(player, "IsBuilding") then
 		return false, "Cooldown"
 	end
 	StateHandler.SetState(player, "IsBuilding", true, 0.2)
-	
+
 	if not itemData or not itemData.Category or not itemData.ItemName or not itemData.CFrame then
 		warn(`[BuildingService] PlaceItem negado para ${player.Name} devido a dados inválidos ou nulos.`)
 		return false, "InvalidData"
@@ -742,8 +765,8 @@ function BuildingService:PlaceItem(player, itemData, isServer)
 				return false, "PlacementLimitReached"
 			end
 		end
-	
-		local inventoryItemUUID = itemData.InventoryUUID 
+
+		local inventoryItemUUID = itemData.InventoryUUID
 		if not inventoryItemUUID then
 			warn(`[BuildingService] Tentativa de colocar pet por ${player.Name} sem InventoryUUID.`)
 			return false, "MissingInventoryUUID"
@@ -752,17 +775,17 @@ function BuildingService:PlaceItem(player, itemData, isServer)
 		local petInstanceData = InventoryService:FindAndRemoveByUUID(player, inventory, inventoryItemUUID)
 
 		if not petInstanceData then
-			return false, "ItemNotInInventory" 
+			return false, "ItemNotInInventory"
 		end
 		local success, message = PetController.SpawnPetForPlayer(player, itemName, petInstanceData, cframe)
 
 		if success then
 			local hasMore = InventoryService:HasItem(player, itemDataInfo.Name)
-			self:UpdateAndNotifyClientBuffs(player) 
+			self:UpdateAndNotifyClientBuffs(player)
 			return true, { message = message }, hasMore
 		else
 			InventoryService:Add(player, petInstanceData)
-			return false, message 
+			return false, message
 		end
 	else
 		local result, rayOrMessage = self:ValidatePlacement(player, cframe.Position, itemDataInfo)
@@ -772,37 +795,40 @@ function BuildingService:PlaceItem(player, itemData, isServer)
 
 		-- Plantar semente
 		if itemDataInfo.Stages then
-    local soilModel = nil
-    local hitInstance = rayOrMessage.Instance
-    if hitInstance:FindFirstAncestorOfClass("Model") and hitInstance:FindFirstAncestorOfClass("Model"):HasTag("plot") then
-        soilModel = hitInstance:FindFirstAncestorOfClass("Model")
-    elseif CollectionService:HasTag(hitInstance, "planet") then
-        soilModel = getPlayerPlanetModel(player)
-		if not soilModel:FindFirstChild("Plants") then
-			local plantsFolder = Instance.new("Folder")
-			plantsFolder.Name = "Plants"
-			plantsFolder.Parent = soilModel
-		end
-    end
-			    if not soilModel then
-			        return false, "InvalidSoil"
-			    end
-			    local success, result = FarmingService:NewPlant(player, itemDataInfo, soilModel, cframe)
-			    if success then
-			        local hasMore = InventoryService:HasItem(player, itemDataInfo.Name)
-			        return true, result, hasMore
-			    else
-			        InventoryService:Add(player, {
-			            Name = itemDataInfo.Name, 
-			            Category = itemDataInfo.Category, 
-			            Quantity = 1, 
-			            Stackable = itemDataInfo.Stackable,
-			            Locked = false
-			        })
-			        return false, result
-			    end
+			local soilModel = nil
+			local hitInstance = rayOrMessage.Instance
+			if
+				hitInstance:FindFirstAncestorOfClass("Model")
+				and hitInstance:FindFirstAncestorOfClass("Model"):HasTag("plot")
+			then
+				soilModel = hitInstance:FindFirstAncestorOfClass("Model")
+			elseif CollectionService:HasTag(hitInstance, "planet") then
+				soilModel = getPlayerPlanetModel(player)
+				if not soilModel:FindFirstChild("Plants") then
+					local plantsFolder = Instance.new("Folder")
+					plantsFolder.Name = "Plants"
+					plantsFolder.Parent = soilModel
+				end
+			end
+			if not soilModel then
+				return false, "InvalidSoil"
+			end
+			local success, result = FarmingService:NewPlant(player, itemDataInfo, soilModel, cframe)
+			if success then
+				local hasMore = InventoryService:HasItem(player, itemDataInfo.Name)
+				return true, result, hasMore
 			else
-						-- Colocar item comum
+				InventoryService:Add(player, {
+					Name = itemDataInfo.Name,
+					Category = itemDataInfo.Category,
+					Quantity = 1,
+					Stackable = itemDataInfo.Stackable,
+					Locked = false,
+				})
+				return false, result
+			end
+		else
+			-- Colocar item comum
 			if not isServer then
 				local removed = InventoryService:Remove(player, itemDataInfo.Name, 1)
 				if not removed then
@@ -812,7 +838,9 @@ function BuildingService:PlaceItem(player, itemData, isServer)
 			local hasMore = InventoryService:HasItem(player, itemDataInfo.Name)
 
 			local itemModel = ItemData:FindModel(itemDataInfo)
-			if not itemModel then return false, "NoItemModel" end
+			if not itemModel then
+				return false, "NoItemModel"
+			end
 
 			local newUUID = itemData.UUID or HttpService:GenerateGUID(true)
 			local newObject = itemModel:Clone()
@@ -824,9 +852,15 @@ function BuildingService:PlaceItem(player, itemData, isServer)
 			if categoryTags[itemDataInfo.Category] then
 				CollectionService:AddTag(newObject, categoryTags[itemDataInfo.Category])
 				if itemDataInfo.Category == "Farming" then
-					if itemDataInfo.MaxPlants then newObject:SetAttribute("MaxPlants", itemDataInfo.MaxPlants) end
-					if itemDataInfo.GrowthBonus then newObject:SetAttribute("GrowthBonus", itemDataInfo.GrowthBonus) end
-					if not newObject:FindFirstChild("Plants") then Instance.new("Folder", newObject).Name = "Plants" end
+					if itemDataInfo.MaxPlants then
+						newObject:SetAttribute("MaxPlants", itemDataInfo.MaxPlants)
+					end
+					if itemDataInfo.GrowthBonus then
+						newObject:SetAttribute("GrowthBonus", itemDataInfo.GrowthBonus)
+					end
+					if not newObject:FindFirstChild("Plants") then
+						Instance.new("Folder", newObject).Name = "Plants"
+					end
 
 					createPlotBuffGui(newObject, itemDataInfo)
 				end
@@ -834,9 +868,15 @@ function BuildingService:PlaceItem(player, itemData, isServer)
 			CollectionService:AddTag(newObject, "built_item")
 
 			local objectData = {
-				UUID = newUUID, ItemName = itemName, ItemData = itemDataInfo, Model = newObject,
-				Owner = player.Name, PlacedTime = os.time(), Position = cframe.Position,
-				Rotation = cframe.Rotation, Category = itemDataInfo.Category,
+				UUID = newUUID,
+				ItemName = itemName,
+				ItemData = itemDataInfo,
+				Model = newObject,
+				Owner = player.Name,
+				PlacedTime = os.time(),
+				Position = cframe.Position,
+				Rotation = cframe.Rotation,
+				Category = itemDataInfo.Category,
 			}
 
 			if not placedObjects[currentPlanet.Name] then
@@ -846,21 +886,25 @@ function BuildingService:PlaceItem(player, itemData, isServer)
 			setSafeAttributes(newObject, objectData)
 			placedObjects[currentPlanet.Name][newUUID] = objectData
 			addClickDetector(newObject, player)
-			
+
 			if itemDataInfo.Category == "Decoration" then
-				ReplicatedStorage.BindableEvents.Tutorial.TutorialProgressEvent:Fire(player, "DecorationPlaced", itemName)
+				ReplicatedStorage.BindableEvents.Tutorial.TutorialProgressEvent:Fire(
+					player,
+					"DecorationPlaced",
+					itemName
+				)
 			end
 
 			if itemDataInfo.Category == "Farming" and itemName == "CubePlot" then
 				ReplicatedStorage.BindableEvents.Tutorial.TutorialProgressEvent:Fire(player, "PlotPlaced", itemName)
 			end
-			
+
 			if itemDataInfo.Buffs then
 				createBuffDisplayGui(newObject, itemDataInfo)
-				self:UpdateAndNotifyClientBuffs(player) 
+				self:UpdateAndNotifyClientBuffs(player)
 			end
 			if itemDataInfo.Category == "Crates" then
-				local crateConfig = CrateData[itemName] 
+				local crateConfig = CrateData[itemName]
 				if crateConfig then
 					local prompt = Instance.new("ProximityPrompt")
 					prompt.ActionText = "Open"
@@ -871,19 +915,19 @@ function BuildingService:PlaceItem(player, itemData, isServer)
 					prompt:SetAttribute("Theme", "StarProx")
 					prompt:SetAttribute("IsCrate", true)
 					prompt.Parent = newObject.PrimaryPart or newObject
-					newObject:SetAttribute("CrateType", itemName) 
+					newObject:SetAttribute("CrateType", itemName)
 					task.spawn(function()
-						prompt.Enabled =  false
+						prompt.Enabled = false
 						task.wait(0.1)
 						prompt.Enabled = true
 					end)
-					createCrateInfoGui(newObject, itemName) 
+					createCrateInfoGui(newObject, itemName)
 				end
 			end
 			return true, objectData, hasMore
-		end 
-	end 
-end 
+		end
+	end
+end
 function BuildingService:ValidatePlacement(player, position, itemDataInfo)
 	local positionVector3
 	if typeof(position) == "CFrame" then
@@ -905,7 +949,7 @@ function BuildingService:ValidatePlacement(player, position, itemDataInfo)
 	local rayParams = RaycastParams.new()
 	rayParams.FilterType = Enum.RaycastFilterType.Exclude
 	rayParams.IgnoreWater = true
-	rayParams.FilterDescendantsInstances = {player.Character}
+	rayParams.FilterDescendantsInstances = { player.Character }
 
 	local raycast = workspace:Raycast(rayOrigin, rayDirection, rayParams)
 	if not raycast then
@@ -940,7 +984,6 @@ function BuildingService:ValidatePlacement(player, position, itemDataInfo)
 		end
 	end
 
-
 	-- Validação de Propriedade (se está colocando no seu próprio terreno)
 	local ownerFound = false
 	local ownerAttributeSource = hitModel or hitInstance:FindFirstAncestorWithTag("planet")
@@ -956,7 +999,7 @@ function BuildingService:ValidatePlacement(player, position, itemDataInfo)
 	if hitModel and hitModel:GetAttribute("Owner") ~= player.Name then
 		ownerFound = false
 	end
-	
+
 	if not ownerFound then
 		local planetFolderOwner = getPlayerPlanetModel(player)
 		if planetFolderOwner and planetFolderOwner.Parent:GetAttribute("Owner") == player.Name then
@@ -982,7 +1025,9 @@ function BuildingService:ValidatePlacement(player, position, itemDataInfo)
 end
 
 function BuildingService:RemoveMultipleObjects(player, objectUUIDs, forceRemove)
-	if type(objectUUIDs) ~= "table" then return false, "InvalidData" end
+	if type(objectUUIDs) ~= "table" then
+		return false, "InvalidData"
+	end
 
 	forceRemove = (forceRemove == true)
 
@@ -995,7 +1040,7 @@ function BuildingService:RemoveMultipleObjects(player, objectUUIDs, forceRemove)
 	local failures = 0
 
 	for _, uuid in ipairs(objectUUIDs) do
-		local success, reason = self:_internalRemoveSingleObject(player, uuid, forceRemove,true)
+		local success, reason = self:_internalRemoveSingleObject(player, uuid, forceRemove, true)
 		if success then
 			successes = successes + 1
 		else
@@ -1004,11 +1049,13 @@ function BuildingService:RemoveMultipleObjects(player, objectUUIDs, forceRemove)
 		end
 	end
 
-	print(`[BuildingService] ${player.Name} guardou ${successes} itens (Forçado: ${tostring(forceRemove)}). Falhas: ${failures}.`)
-	return true, {succeeded = successes, failed = failures}
+	print(
+		`[BuildingService] ${player.Name} guardou ${successes} itens (Forçado: ${tostring(forceRemove)}). Falhas: ${failures}.`
+	)
+	return true, { succeeded = successes, failed = failures }
 end
 
-function BuildingService:_internalRemoveSingleObject(player, objectUUID, forceRemove,returnToInventory)
+function BuildingService:_internalRemoveSingleObject(player, objectUUID, forceRemove, returnToInventory)
 	local objectData = nil
 	local planetName = nil
 	for _, planetFolder in ipairs(workspace.Planets:GetChildren()) do
@@ -1022,8 +1069,12 @@ function BuildingService:_internalRemoveSingleObject(player, objectUUID, forceRe
 		end
 	end
 
-	if not objectData then return false, "ObjectNotFound" end
-	if objectData.Owner ~= player.Name then return false, "NotOwner" end
+	if not objectData then
+		return false, "ObjectNotFound"
+	end
+	if objectData.Owner ~= player.Name then
+		return false, "NotOwner"
+	end
 	if objectData.Model and objectData.Model:GetAttribute("CannotStore") then
 		return false, "CannotBeStored"
 	end
@@ -1047,7 +1098,7 @@ function BuildingService:_internalRemoveSingleObject(player, objectUUID, forceRe
 		placedObjects[planetName][objectUUID] = nil
 	end
 	if objectData.ItemData and objectData.ItemData.Buffs then
-		self:UpdateAndNotifyClientBuffs(player) 
+		self:UpdateAndNotifyClientBuffs(player)
 	end
 	if returnToInventory and objectData.ItemData and not objectData.Model:GetAttribute("CannotStore") then
 		local itemToAdd = {
@@ -1055,7 +1106,7 @@ function BuildingService:_internalRemoveSingleObject(player, objectUUID, forceRe
 			Category = objectData.ItemData.Category,
 			Stackable = objectData.ItemData.Stackable or false,
 			Quantity = 1,
-			Locked = false
+			Locked = false,
 		}
 		InventoryService:Add(player, itemToAdd)
 	end
@@ -1064,7 +1115,6 @@ function BuildingService:_internalRemoveSingleObject(player, objectUUID, forceRe
 end
 
 function BuildingService:RemoveObject(player, objectUUID, forceRemove, returnToInventory)
-	
 	if StateHandler.GetState(player, "IsRemoving") then
 		return false, "Cooldown"
 	end
@@ -1115,7 +1165,7 @@ function BuildingService:GetAllPlacedObjects()
 end
 
 function BuildingService:ClearPlayerObjects(player)
-	local PetController = require(game.ServerScriptService.Game.PetController)
+	local PetController = require(ServerScriptService.General.PetService)
 	local objectsToRemove = {}
 	for planetName, objects in pairs(placedObjects) do
 		for uuid, objectData in pairs(objects) do
@@ -1123,9 +1173,8 @@ function BuildingService:ClearPlayerObjects(player)
 				table.insert(objectsToRemove, {
 					planetName = planetName,
 					uuid = uuid,
-					model = objectData.Model
+					model = objectData.Model,
 				})
-
 			end
 		end
 	end
@@ -1139,14 +1188,13 @@ function BuildingService:ClearPlayerObjects(player)
 		end
 	end
 	print(`[BuildingService] Foram limpos ${#objectsToRemove} objetos para o jogador ${player.Name}`)
-	PetController:ClearPlayerPetsAndData(player) 
+	PetController:ClearPlayerPetsAndData(player)
 end
 --[[
 	INITIALIZATION
 --]]
 
 function BuildingService:Initialize()
-	
 	--print(`🏗️ BUILDING SERVICE v{script:GetAttribute("version")} HAS STARTED`)
 
 	-- Criar pasta de objetos
@@ -1185,8 +1233,10 @@ function BuildingService:Initialize()
 
 	-- Configurar remote functions
 	BuildingAction.OnServerInvoke = function(player, action, ...)
-		if not player then return end
-		local args = {...} 
+		if not player then
+			return
+		end
+		local args = { ... }
 
 		if action == "PlaceObject" then
 			return BuildingService:PlaceObject(player, unpack(args))
@@ -1200,7 +1250,9 @@ function BuildingService:Initialize()
 			-- GetItemClientData espera (player, category, itemName)
 			local category, itemName = args[1], args[2]
 			local itemData = ItemData:GetItem(category, itemName)
-			if not itemData then return nil end
+			if not itemData then
+				return nil
+			end
 
 			local previewModelPath = nil
 			if itemData.Path then
@@ -1231,8 +1283,7 @@ function BuildingService:Initialize()
 	end
 
 	-- Configurar eventos de jogador(off)
-	Players.PlayerAdded:Connect(function(player)
-	end)
+	Players.PlayerAdded:Connect(function(player) end)
 end
 
 return BuildingService

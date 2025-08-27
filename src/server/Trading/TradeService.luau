@@ -1,11 +1,11 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+local ServerScriptService = game:GetService("ServerScriptService").Server
 
 local InventoryService = require(ServerScriptService.Player.InventoryService)
-local StateManager = require(ServerScriptService.Game.StateHandler)
+local StateManager = require(ServerScriptService.General.StateHandler)
 local ItemData = require(ServerScriptService.Data.ItemData)
-local PetDataService = require(ServerScriptService.Data.PetDataService) 
+local PetDataService = require(ServerScriptService.Data.PetData) 
 local TradeFolder = ReplicatedStorage.RemoteEvents.TradeSystem
 
 -- Apenas dois remotes agora!

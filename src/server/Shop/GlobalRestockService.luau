@@ -3,8 +3,9 @@ local GlobalRestockService = {}
 local Players = game:GetService("Players")
 local DataStoreService = game:GetService("DataStoreService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local EggShopService = require(game:GetService("ServerScriptService").Game.EggShopService)
-local MerchantService = require(game:GetService("ServerScriptService").Game.MerchantService)
+local ServerScriptService = game:GetService("ServerScriptService").Server
+local EggShopService = require(ServerScriptService.Shop.EggShopService)
+local MerchantService = require(ServerScriptService.Shop.MerchantService)
 local Workspace = game:GetService("Workspace")
 local remoteEventsFolderofShop = ReplicatedStorage:FindFirstChild("RemoteEvents"):FindFirstChild('Shop')
 local globalRestockEvent = remoteEventsFolderofShop:FindFirstChild("GlobalRestock")
@@ -143,7 +144,7 @@ end
 
 --// Restock personal items (Seeds, Decorations) for a specific player
 function GlobalRestockService:RestockPlayerPersonalItems(player)
-	local ItemData = require(game:GetService("ServerScriptService").Data.ItemData) 
+	local ItemData = require(ServerScriptService.Data.ItemData) 
 	if not ItemData then warn("⚠️ ItemData module not found!") return end
 
 	if ItemData.RestockPlayerToDefault then pcall(ItemData.RestockPlayerToDefault, ItemData, player) end

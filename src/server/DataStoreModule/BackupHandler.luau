@@ -1,7 +1,7 @@
 local BackUpsModule = {}
 BackUpsModule.__index = BackUpsModule
 	
-local Awaiter = require(script.Parent.AwaiterModule)
+local Awaiter = require(script.Parent.Awaiter)
 
 local DataStoreService = game:GetService("DataStoreService")
 

@@ -5,13 +5,13 @@
 ]]
 
 
-local ServerScriptService = game:GetService("ServerScriptService")
+local ServerScriptService = game:GetService("ServerScriptService").Server
 local BuildingService, PlantSaveData, InventoryService, RocketService
 local PetDataService
 local UpdateDataRemoteEvent = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvents"):WaitForChild("UpdatePlayerData")
 local UpdateDataBindableEvent = game:GetService("ServerStorage").BindableEvents.PlayerDataUpdate
-local BackupModule = require(script.BackupsModule)
-local Awaiter = require(script.AwaiterModule)
+local BackupModule = require(script.BackupHandler)
+local Awaiter = require(script.Awaiter)
 local RunService = game:GetService("RunService")
 local LogService = game:GetService("LogService")
 
@@ -149,12 +149,11 @@ DataStoreModule.DebugTracker = script.DebugTracker
 
 local function SavePlayerSequentially(player)
 	if not BuildingService then
-		local ServerScriptService = game:GetService("ServerScriptService")
-		BuildingService = require(ServerScriptService.Game.BuildingService)
-		PlantSaveData = require(ServerScriptService.Data.PlantSaveData)
+		BuildingService = require(ServerScriptService.Building.BuildingService)
+		PlantSaveData = require(ServerScriptService.Building.PlantService)
 		InventoryService = require(ServerScriptService.Player.InventoryService)
-		RocketService = require(ServerScriptService.Game.RocketService)
-		PetDataService = require(ServerScriptService.Data.PetDataService)
+		RocketService = require(ServerScriptService.Planet.RocketService)
+		PetDataService = require(ServerScriptService.Data.PetData)
 		print("[SAVE HANDLER] Módulos de serviço carregados sob demanda.")
 	end
 

@@ -5,7 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 -- DataStore para salvar dados dos jogadores
-local DataStoreModule = require(game:GetService("ServerScriptService").Data.DataStoreModule)
+local DataStoreModule = require(game:GetService("ServerScriptService").Server.DataStoreModule)
 local UpdateDataBindableEvent = game:GetService("ServerStorage").BindableEvents.PlayerDataUpdate
 local AddBattlePassXPEvent = ServerStorage.BindableEvents.AddBattlePassXP
 local MoneyNotificationRemote = ReplicatedStorage:WaitForChild('RemoteEvents'):WaitForChild("MoneyNotification")

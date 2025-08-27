@@ -1,7 +1,8 @@
+
 local RocketService = {}
 local RemoteFunctions = game:GetService("ReplicatedStorage").RemoteFunctions.Rocket
 local Players = game:GetService("Players")
-local BuildingService = require(game:GetService("ServerScriptService").Game.BuildingService)
+local BuildingService = require(game:GetService("ServerScriptService").Server.Building.BuildingService)
 local CollectionService = game:GetService("CollectionService") 
 local HttpService = game:GetService("HttpService") 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10,7 +11,6 @@ local PlanetOwnershipChangedEvent = ReplicatedStorage.RemoteEvents.Permissions:W
 local UpdateLocationEvent = ReplicatedStorage.RemoteEvents.Rocket:WaitForChild("UpdatePlayerLocation")
 
 local PlaySoundEvent = ReplicatedStorage.RemoteEvents.SoundsEffects:WaitForChild("PlaySoundForClient")
-
 
 RocketService.PlayerLocations = {}
 

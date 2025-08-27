@@ -6,7 +6,7 @@ local RocketFolder = ReplicatedStorage.RemoteEvents.Rocket
 local PermissionsFunction = ReplicatedStorage.RemoteFunctions:WaitForChild("Permissions")
 local ForceTravelEvent = RocketFolder:WaitForChild("ForceTravelToLobby")
 local NotifyPlayerEvent = ReplicatedStorage.RemoteEvents.Shop:WaitForChild("NotifyPlayer")
-local DataStoreModule = require(game:GetService("ServerScriptService").Data.DataStoreModule)
+local DataStoreModule = require(game:GetService("ServerScriptService").Server.DataStoreModule)
 
 local PERMISSIONS_DATASTORE_NAME = "PlanetPermissions_v1"
 local RocketService 

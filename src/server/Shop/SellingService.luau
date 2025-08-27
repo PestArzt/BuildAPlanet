@@ -3,14 +3,14 @@ local SellService = {}
 -- Referências (mantidas)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+local ServerScriptService = game:GetService("ServerScriptService").Server
 
 -- Modules (mantidos)
-local DataStoreModule = require(game:GetService("ServerScriptService").Data.DataStoreModule)
-local ItemData = require(game:GetService("ServerScriptService").Data.ItemData)
-local LeaderstatsService = require(game:GetService("ServerScriptService").Player.LeaderStatsService)
-local InventoryService = require(game:GetService("ServerScriptService").Player.InventoryService)
-local BuildingService = require(ServerScriptService.Game.BuildingService)
+local DataStoreModule = require(ServerScriptService.DataStoreModule)
+local ItemData = require(ServerScriptService.Data.ItemData)
+local LeaderstatsService = require(ServerScriptService.Player.LeaderStatsService)
+local InventoryService = require(ServerScriptService.Player.InventoryService)
+local BuildingService = require(ServerScriptService.Building.BuildingService)
 -- RemoteFunctions
 local SellAction = game.ReplicatedStorage.RemoteFunctions.Shop:WaitForChild('SellAction')
 

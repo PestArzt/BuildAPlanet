@@ -16,10 +16,11 @@ local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
+local ServerScriptService = game:GetService("ServerScriptService").Server
 
-local DataStoreModule = require(game:GetService("ServerScriptService").Data.DataStoreModule)
-local ItemData = require(game:GetService("ServerScriptService").Data.ItemData)
-local PlantMutationData = require(game:GetService("ServerScriptService").Data.PlantsMutationData)
+local DataStoreModule = require(ServerScriptService.DataStoreModule)
+local ItemData = require(ServerScriptService.Data.ItemData)
+local PlantMutationData = require(ServerScriptService.Data.PlantsMutationData)
 local FarmingService
 
 local loadedPlantDataCache = {}

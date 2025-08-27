@@ -2,14 +2,14 @@ local CrateShopService = {}
 
 local PlayersService      = game:GetService("Players")
 local ReplicatedStorage   = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+local ServerScriptService = game:GetService("ServerScriptService").Server
 
 --// Módulos requeridos
 local ItemData = require(ServerScriptService.Data.ItemData) 
 local CrateData = require(ServerScriptService.Data.CrateData) 
 local InventoryService = require(ServerScriptService.Player.InventoryService)
 
-local StateHandler = require(ServerScriptService.Game.StateHandler) 
+local StateHandler = require(ServerScriptService.General.StateHandler) 
 local LeaderstatsService = require(ServerScriptService.Player.LeaderStatsService)
 
 --// Remotes

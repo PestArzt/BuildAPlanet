@@ -2,13 +2,13 @@ local MerchantService = {}
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local ServerScriptService = game:GetService("ServerScriptService")
+local ServerScriptService = game:GetService("ServerScriptService").Server
 local DataStoreService = game:GetService("DataStoreService")
 
 local ItemData = require(ServerScriptService.Data.ItemData)
 local LeaderstatsService = require(ServerScriptService.Player.LeaderStatsService)
 local InventoryService = require(ServerScriptService.Player.InventoryService)
-local DataStoreModule = require(ServerScriptService.Data.DataStoreModule)
+local DataStoreModule = require(ServerScriptService.DataStoreModule)
 
 local Remotes = ReplicatedStorage.RemoteEvents
 local ShopEvents = Remotes:WaitForChild('Shop')

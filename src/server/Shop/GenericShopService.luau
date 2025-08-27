@@ -3,12 +3,13 @@ local GenericShopService = {}
 --// Services & Modules
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local DataStoreModule = require(game:GetService("ServerScriptService").Data.DataStoreModule)
-local ItemData = require(game:GetService("ServerScriptService").Data.ItemData)
-local LeaderstatsService = require(game:GetService("ServerScriptService").Player.LeaderStatsService)
-local InventoryService = require(game:GetService("ServerScriptService").Player.InventoryService)
+local ServerScriptService = game:GetService("ServerScriptService").Server
+local DataStoreModule = require(ServerScriptService.DataStoreModule)
+local ItemData = require(ServerScriptService.Data.ItemData)
+local LeaderstatsService = require(ServerScriptService.Player.LeaderStatsService)
+local InventoryService = require(ServerScriptService.Player.InventoryService)
 local GlobalRestockService = _G.GlobalRestockService -- Acessar o serviço global
-local StateHandler = require(game:GetService("ServerScriptService").Game.StateHandler) 
+local StateHandler = require(ServerScriptService.General.StateHandler) 
 --// RemoteFunctions
 local ShopAction = ReplicatedStorage.RemoteFunctions.Shop:WaitForChild('ShopAction')
 --// RemoteEvents

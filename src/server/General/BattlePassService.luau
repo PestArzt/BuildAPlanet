@@ -1,11 +1,11 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+local ServerScriptService = game:GetService("ServerScriptService").Server
 
 -- Módulos e Remotes
 local ItemData = require(ServerScriptService.Data.ItemData)
 local InventoryService = require(ServerScriptService.Player.InventoryService)
-local DataStoreModule = require(ServerScriptService.Data.DataStoreModule)
+local DataStoreModule = require(ServerScriptService.DataStoreModule)
 local BattlePassConfig = require(ReplicatedStorage.Modules.BattlePassConfig) 
 local ServerStorage = game:GetService("ServerStorage")
 local MarketplaceService = game:GetService("MarketplaceService")

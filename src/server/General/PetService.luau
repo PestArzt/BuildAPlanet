@@ -12,6 +12,7 @@ local HttpService = game:GetService("HttpService")
 local PathfindingService = game:GetService("PathfindingService")
 local CollectionService = game:GetService("CollectionService")
 local Debris = game:GetService("Debris")
+local ServerScriptService = game:GetService("ServerScriptService").Server
 
 local PetSystem = ReplicatedStorage:WaitForChild("PetSystem")
 local EffectsFolder = ReplicatedStorage:WaitForChild("Effects")
@@ -19,10 +20,10 @@ local HeartsFX = EffectsFolder:WaitForChild("HeartsFX")
 
 local GravityModule = require(PetSystem.Modules.GravityModule)
 local PetModelTemplate = PetSystem.Assets:WaitForChild("PigPet")
-local InventoryService = require(game.ServerScriptService.Player.InventoryService) 
-local ItemData = require(game.ServerScriptService.Data.ItemData)
+local InventoryService = require(ServerScriptService.Player.InventoryService) 
+local ItemData = require(ServerScriptService.Data.ItemData)
 local ResetGravityEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("ResetGravityControllerEvent")
-local PetDataService = require(game:GetService("ServerScriptService").Data.PetDataService)
+local PetDataService = require(ServerScriptService.Data.PetData)
 
 
 local PetActionEvent = PetSystem.RemoteEvents:WaitForChild("PetAction")

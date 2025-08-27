@@ -2,20 +2,20 @@ local EcclesiaConsole = {}
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+local ServerScriptService = game:GetService("ServerScriptService").Server
 local TeleportService = game:GetService("TeleportService")
+local MessagingService = game:GetService("MessagingService")
 
 local DataStoreService = game:GetService("DataStoreService")
-local DataStoreModule = require(ServerScriptService.Data.DataStoreModule) 
+local DataStoreModule = require(ServerScriptService.DataStoreModule) 
 local InventoryService = require(ServerScriptService.Player.InventoryService)
 local ItemData = require(ServerScriptService.Data.ItemData)
 local LeaderStatsService = require(ServerScriptService.Player.LeaderStatsService)
-local MessagingService = game:GetService("MessagingService")
-local GlobalRestockService = require(ServerScriptService.Game.GlobalRestockService)
+local GlobalRestockService = require(ServerScriptService.Shop.GlobalRestockService)
 local AdminList = require(script.Parent.AdminList) 
-local BattlePassServiceModule = require(ServerScriptService.Game.BattlePassService) 
-local BuildingService = require(ServerScriptService.Game.BuildingService)
-local FarmingService = require(ServerScriptService.Game.FarmingService)
+local BattlePassServiceModule = require(ServerScriptService.General.BattlePassService) 
+local BuildingService = require(ServerScriptService.Building.BuildingService)
+local FarmingService = require(ServerScriptService.Building.FarmingService)
 
 local AdminPanelFolder = ReplicatedStorage.RemoteFunctions:FindFirstChild("Admin")
 local AdminActionRemote = AdminPanelFolder:FindFirstChild("AdminAction")
