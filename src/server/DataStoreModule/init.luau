@@ -30,8 +30,7 @@ LogService.MessageOut:Connect(function(message, messageType)
 	end
 end)
 
-local SaveInStudio = script.SaveInStudio.Value
-
+local SaveInStudio = true
 local DataStoreMethods = {}
 
 function DataStoreMethods:SetData(value)
@@ -145,7 +144,14 @@ local DataStoreMetaTable = {}
 DataStoreMetaTable.__index =  DataStoreMethods
 
 local DataStoreModule = {}
-DataStoreModule.DebugTracker = script.DebugTracker
+
+if not script:FindFirstChild("DebugTracker") then
+	DataStoreModule.DebugTracker = Instance.new("BindableFunction")
+	DataStoreModule.DebugTracker.Parent = script
+	DataStoreModule.DebugTracker.Name = "DebugTracker"
+else
+	DataStoreModule.DebugTracker = script.DebugTracker
+end
 
 local function SavePlayerSequentially(player)
 	if not BuildingService then
