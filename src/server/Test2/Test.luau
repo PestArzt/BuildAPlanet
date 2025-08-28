@@ -1,0 +1,1 @@
+print("i`m the best of scripts")
